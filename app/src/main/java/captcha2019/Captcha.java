@@ -2,12 +2,23 @@ package captcha2019;
 
 import javafx.scene.image.Image;
 
+import java.util.Date;
+
 public class Captcha {
     private int id;
     private String filename;
     private String value;
-    private Integer date;
+    private long date;
+    private String data;
     private Image irudia;
+
+    public String getData() {
+        return data;
+    }
+
+    public void setData(String data) {
+        this.data = data;
+    }
 
     public int getId() {
         return id;
@@ -33,11 +44,11 @@ public class Captcha {
         this.value = value;
     }
 
-    public Integer getDate() {
+    public long getDate() {
         return date;
     }
 
-    public void setDate(Integer date) {
+    public void setDate(long date) {
         this.date = date;
     }
 

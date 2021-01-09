@@ -2,6 +2,7 @@ package captcha2019.control.ui;
 
 import captcha2019.Captcha;
 import captcha2019.control.db.DBKudeatzaile;
+import captcha2019.utils.Utils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -16,11 +17,17 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.util.Callback;
-import javafx.util.converter.IntegerStringConverter;
+import org.sqlite.core.DB;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.ResourceBundle;
 
 public class MainUIKud implements Initializable {
@@ -45,17 +52,6 @@ public class MainUIKud implements Initializable {
 
     ObservableList<Captcha> emaitza= FXCollections.observableArrayList();
 
-
-    @FXML
-    void onClickGorde(ActionEvent event) {
-
-    }
-
-    @FXML
-    void onClickTxertatu(ActionEvent event) {
-
-    }
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         ResultSet resultSet= DBKudeatzaile.getInstantzia().execSQL("select * from captchas");
@@ -69,7 +65,7 @@ public class MainUIKud implements Initializable {
         zutId.setCellValueFactory(new PropertyValueFactory<>("id"));
         zutPath.setCellValueFactory(new PropertyValueFactory<>("filename"));
         zutContent.setCellValueFactory(new PropertyValueFactory<Captcha, String>("value"));
-        zutDate.setCellValueFactory(new PropertyValueFactory<>("date"));
+        zutDate.setCellValueFactory(new PropertyValueFactory<>("data"));
         zutIrudia.setCellValueFactory(new PropertyValueFactory<>("irudia"));
 
         zutIrudia.setCellFactory(p -> new TableCell<>() {
@@ -106,6 +102,59 @@ public class MainUIKud implements Initializable {
 
     }
 
+    @FXML
+    void onClickGorde(ActionEvent event) {
+        DBKudeatzaile.getInstantzia().execSQL("delete from captchas");
+
+        emaitza.forEach(elem->{
+
+            String query="insert into captchas (filename,value,date) values('"+
+                    elem.getFilename()+"','"+
+                    elem.getValue()+"','"+
+                    elem.getDate()+"')";
+            DBKudeatzaile.getInstantzia().execSQL(query);
+        });
+    }
+
+    @FXML
+    void onClickTxertatu(ActionEvent event) throws IOException {
+        BufferedImage image;
+        File file=File.createTempFile("captcha",".png", new File(Utils.lortuEzarpenak().getProperty("irudiak")));
+        Captcha captcha=new Captcha();
+
+        //System.getProperty("file.separator")+ "irudiak" +System.getProperty("file.separator")
+
+        try{
+            URL url=new URL("http://45.32.169.98/captcha.php");
+            image= ImageIO.read(url);
+            ImageIO.write(image,"png",file);
+
+            String query="insert into captchas (filename,date) values('"+
+                    captcha.getFilename()+"','"+
+                    +captcha.getDate()+"')";
+            DBKudeatzaile.getInstantzia().execSQL(query);
+
+            ResultSet resultSet=DBKudeatzaile.getInstantzia().execSQL("SELECT * from captchas where filename='"+captcha.getFilename()+"'");
+
+            resultSet.next();
+            captcha.setId(resultSet.getInt("id"));
+            captcha.setFilename(file.getName());
+            captcha.setIrudia(new Image(file.toURI().toString()));
+            captcha.setDate( System.currentTimeMillis());
+            captcha.setData(new Date(captcha.getDate()).toString());
+
+            emaitza.add(captcha);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+
+    }
+
+
     private void datuakSartu(ResultSet resultSet) throws SQLException {
 
         while (resultSet.next()){
@@ -114,7 +163,8 @@ public class MainUIKud implements Initializable {
             captcha.setFilename(resultSet.getString("filename"));
             captcha.setValue(resultSet.getString("value"));
             captcha.setDate(resultSet.getInt("date"));
-            captcha.setIrudia(new Image(System.getProperty("file.separator")+"irudiak"+System.getProperty("file.separator")+captcha.getFilename()));
+            captcha.setData(new Date(captcha.getDate()).toString());
+            captcha.setIrudia(new Image(new File(Utils.lortuEzarpenak().getProperty("irudiak")+captcha.getFilename()).toURI().toString()));
 
             emaitza.add(captcha);
         }
