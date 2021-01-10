@@ -104,6 +104,7 @@ public class MainUIKud implements Initializable {
 
     @FXML
     void onClickGorde(ActionEvent event) {
+        //TODO: value null bada ez gorde db-an value atributua...
         DBKudeatzaile.getInstantzia().execSQL("delete from captchas");
 
         emaitza.forEach(elem->{
